@@ -232,6 +232,5 @@ Los archivos `generarSQL.js` y `carga.js` son necesarios para procesar y cargar 
 # Conclusión
 
 Este proyecto consiste en una aplicación web para gestionar y mostrar datos sobre visitas a parques nacionales según el tipo de origen del visitante. El backend está implementado en Node.js con Express y se conecta a una base de datos SQLite en la nube usando `@sqlitecloud/drivers`. Ofrece múltiples endpoints para consultar, filtrar, insertar, actualizar y eliminar registros de visitas. El frontend, basado en HTML, CSS y JavaScript, consume APIs para mostrar datos y gráficos interactivos. Además, se incluyen herramientas para procesamiento de archivos CSV y el uso de CORS para manejo de peticiones desde el cliente. Se puede mejorar la calidad del software con pruebas end-to-end usando Cypress, que se integra principalmente en el frontend para validar funcionalidades y la correcta comunicación con el backend. En resumen, es un sistema completo que cubre la gestión de datos, visualización y control de calidad mediante pruebas automatizadas.
-#   T P - 2 - P W 2 
  
  
