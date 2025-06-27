@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visitas por tipo de origen</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #48dbfb, #1dd1a1);
+      color: #222;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 0.1rem;
+    }
+    section {
+      background: #ffffffdd;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      max-width: 1500px;
+      margin: 1rem auto;
+      padding: 1.5rem 2rem;
+    }
+    h3 {
+      border-bottom: 2px solid #1dd1a1;
+      padding-bottom: 0.3rem;
+      margin-bottom: 1rem;
+      color: #10ac84;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    th {
+      background: #1dd1a1;
+      color: white;
+    }
+    button {
+      padding: 6px 12px;
+      background: #3397fa;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s ease;
+      margin: 0 2px 0 0;
+    }
+    button:hover:not(:disabled) {
+      background: #1e70d1;
+    }
+    button:disabled {
+      background: #a0a0a0;
+      cursor: default;
+    }
+    .paginacion {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .btn-inicio {
+      display: block;
+      width: max-content;
+      margin: 2rem auto 0 auto;
+      padding: 0.8rem 1.5rem;
+      background: #576574;
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      text-align: center;
+      text-decoration: none;
+    }
+    .btn-inicio:hover {
+      background: #3742fa;
+    }
+    .pagina-texto {
+      font-weight: 700;
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+    .centrado-superior {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+#busqueda {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 300px;
+  font-size: 1rem;
+}
+
+  </style>
+</head>
+<body>
+  <h2>Visitas por tipo de origen</h2>
+<div class="centrado-superior">
+  <button class="btn-inicio" onclick="irIndex()">← Volver al inicio</button>
+  <input type="text" id="busqueda" placeholder="🔍 Buscar por palabra/s..." />
+</div>
+
+<!-- Muestra una tabla paginada de visitas de residentes: -->
+  <section>
+    <h3>Residentes</h3>
+    <table id="tablaResidentes">
+      <thead>
+        <tr>
+          <th>Fecha (año y mes)</th>
+          <th>Cantidad de visitas</th>
+          <th>Observaciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="paginacion">
+      <button id="btnPrimeraRes">⏮ Primera página</button>
+      <button id="prevRes" disabled>← Anterior</button>
+      <span id="paginaResTexto" class="pagina-texto">Página 1</span>
+      <button id="nextRes">Siguiente →</button>
+      <button id="btnUltimaRes">Última página ⏭</button>
+    </div>
+  </section>
+
+<!-- Muestra una tabla paginada de visitas de No residentes: -->
+  <section>
+    <h3>No Residentes</h3>
+    <table id="tablaNoResidentes">
+      <thead>
+        <tr>
+          <th>Fecha (año y mes)</th>
+          <th>Cantidad de visitas</th>
+          <th>Observaciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="paginacion">
+      <button id="btnPrimeraNoRes">⏮ Primera página</button>
+      <button id="prevNoRes" disabled>← Anterior</button>
+      <span id="paginaNoResTexto" class="pagina-texto">Página 1</span>
+      <button id="nextNoRes">Siguiente →</button>
+      <button id="btnUltimaNoRes">Última página ⏭</button>
+    </div>
+  </section>
+
+  <script>
+    let paginaRes = 1; //Página actual para los residentes
+    let paginaNoRes = 1; //Página actual para los No residentes
+    const limite = 20; //Límite de filas por página
+    let totalPaginasRes = 1; //Cantidad total de páginas para los residentes
+    let totalPaginasNoRes = 1; //Cantidad total de páginas para los No residentes
+
+    const busquedaInput = document.getElementById('busqueda');
+
+
+    //consulta cuántos registros existen para un tipo de visita (como "residentes" o "no residentes")
+    //y calcula cuántas páginas se necesitan para mostrarlos con paginación.
+    async function actualizarTotalPaginas(tipo) {
+      try {
+        const res = await fetch(`/api/visitas-tipo-count?tipo=${encodeURIComponent(tipo)}`);
+        if (!res.ok) throw new Error('Error al obtener total de registros');
+        const data = await res.json();
+
+        const totalRegistros = data.total || 0;
+        const totalPaginas = Math.ceil(totalRegistros / limite);
+
+        if (tipo === 'residentes') {
+          totalPaginasRes = totalPaginas;
+        } else {
+          totalPaginasNoRes = totalPaginas;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+async function cargarDatos(tipo, tablaId, pagina) {
+  try {
+    let datos = [];
+    const textoFiltro = busquedaInput.value.trim().toLowerCase();
+
+    if (textoFiltro) {
+      // Trae todos los registros filtrados en frontend
+      const res = await fetch('/api/visitas/all');
+      if (!res.ok) throw new Error('Error al buscar datos');
+      const todosDatos = await res.json();
+      datos = todosDatos.filter(item =>
+        item.tipo.toLowerCase() === tipo.toLowerCase() &&
+        (
+          item.fecha.toLowerCase().includes(textoFiltro) ||
+          (item.observaciones && item.observaciones.toLowerCase().includes(textoFiltro))
+        )
+      );
+
+      // No paginar si se muestra búsqueda
+    } else {
+      // paginación
+      const offset = (pagina - 1) * limite;
+      const res = await fetch(`/api/visitas-tipo?tipo=${encodeURIComponent(tipo)}&limit=${limite}&offset=${offset}`);
+      if (!res.ok) throw new Error('Error al obtener datos');
+      datos = await res.json();
+    }
+
+    // Ahora se actualiza la tabla igual que antes
+    const tbody = document.querySelector(`#${tablaId} tbody`);
+    tbody.innerHTML = '';
+
+    if (datos.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3">No hay datos para ${tipo}</td></tr>`;
+      return;
+    }
+//muestra los datos en la tabla.
+    datos.forEach(item => {
+      const fechaFormateada = item.fecha.slice(0, 7);
+      const cantidad = item.visitas;
+      const observaciones = item.observaciones || '';
+
+      const fila = document.createElement('tr');
+      fila.innerHTML = `
+        <td>${fechaFormateada}</td>
+        <td>${cantidad}</td>
+        <td>${observaciones}</td>
+      `;
+      tbody.appendChild(fila);
+    });
+
+    // Actualizacion de botones y texto paginación solo si NO hay busqueda
+    if (!textoFiltro) {
+      if (tipo === 'residentes') {
+        document.getElementById('prevRes').disabled = pagina <= 1;
+        document.getElementById('nextRes').disabled = pagina >= totalPaginasRes;
+        document.getElementById('btnPrimeraRes').disabled = pagina <= 1;
+        document.getElementById('btnUltimaRes').disabled = pagina >= totalPaginasRes;
+        document.getElementById('paginaResTexto').textContent = `Página ${pagina}`;
+        paginaRes = pagina;
+      } else {
+        document.getElementById('prevNoRes').disabled = pagina <= 1;
+        document.getElementById('nextNoRes').disabled = pagina >= totalPaginasNoRes;
+        document.getElementById('btnPrimeraNoRes').disabled = pagina <= 1;
+        document.getElementById('btnUltimaNoRes').disabled = pagina >= totalPaginasNoRes;
+        document.getElementById('paginaNoResTexto').textContent = `Página ${pagina}`;
+        paginaNoRes = pagina;
+      }
+    } else {
+      // Cuando hay búsqueda, se oculta la paginación
+      document.getElementById('prevRes').disabled = true;
+      document.getElementById('nextRes').disabled = true;
+      document.getElementById('btnPrimeraRes').disabled = true;
+      document.getElementById('btnUltimaRes').disabled = true;
+      document.getElementById('paginaResTexto').textContent = `Resultados de búsqueda`;
+
+      document.getElementById('prevNoRes').disabled = true;
+      document.getElementById('nextNoRes').disabled = true;
+      document.getElementById('btnPrimeraNoRes').disabled = true;
+      document.getElementById('btnUltimaNoRes').disabled = true;
+      document.getElementById('paginaNoResTexto').textContent = `Resultados de búsqueda`;
+    }
+
+  } catch (error) {
+    alert("❌ Error al cargar datos: " + error.message);
+    console.error(error);
+  }
+}
+
+    // Funciones para navegar páginas
+    document.getElementById('prevRes').addEventListener('click', () => {
+      if (paginaRes > 1) cargarDatos('residentes', 'tablaResidentes', paginaRes - 1);
+    });
+    document.getElementById('nextRes').addEventListener('click', () => {
+      if (paginaRes < totalPaginasRes) cargarDatos('residentes', 'tablaResidentes', paginaRes + 1);
+    });
+    document.getElementById('btnPrimeraRes').addEventListener('click', () => {
+      cargarDatos('residentes', 'tablaResidentes', 1);
+    });
+    document.getElementById('btnUltimaRes').addEventListener('click', async () => {
+      await actualizarTotalPaginas('residentes');
+      cargarDatos('residentes', 'tablaResidentes', totalPaginasRes);
+    });
+
+    document.getElementById('prevNoRes').addEventListener('click', () => {
+      if (paginaNoRes > 1) cargarDatos('no residentes', 'tablaNoResidentes', paginaNoRes - 1);
+    });
+    document.getElementById('nextNoRes').addEventListener('click', () => {
+      if (paginaNoRes < totalPaginasNoRes) cargarDatos('no residentes', 'tablaNoResidentes', paginaNoRes + 1);
+    });
+    document.getElementById('btnPrimeraNoRes').addEventListener('click', () => {
+      cargarDatos('no residentes', 'tablaNoResidentes', 1);
+    });
+    document.getElementById('btnUltimaNoRes').addEventListener('click', async () => {
+      await actualizarTotalPaginas('no residentes');
+      cargarDatos('no residentes', 'tablaNoResidentes', totalPaginasNoRes);
+    });
+
+    // Filtro mientras se hace la busqueda
+    busquedaInput.addEventListener('input', () => {
+      paginaRes = 1;
+      paginaNoRes = 1;
+      cargarDatos('residentes', 'tablaResidentes', paginaRes);
+      cargarDatos('no residentes', 'tablaNoResidentes', paginaNoRes);
+    });
+    
+// va a la pagina principal
+    function irIndex() {
+      window.location.href = "index.html";
+    }
+
+    // Carga inicial
+    (async () => {
+      await actualizarTotalPaginas('residentes');
+      await actualizarTotalPaginas('no residentes');
+      cargarDatos('residentes', 'tablaResidentes', paginaRes);
+      cargarDatos('no residentes', 'tablaNoResidentes', paginaNoRes);
+    })();
+  </script>
+</body>
+</html>

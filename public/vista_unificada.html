@@ -1,0 +1,167 @@
+<!-- vista_unificada.html: permite filtrar por tipo, fecha y observaciones en una sola página -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visitas - Vista Unificada</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #48dbfb, #1dd1a1);
+      color: #222;
+      padding: 2rem;
+    }
+    .contenedor {
+      max-width: 1000px;
+      margin: auto;
+    }
+    .filtros, .resumen, .graficos, .tabla {
+      background: #ffffffdd;
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    input, select, button {
+      padding: 0.5rem;
+      margin: 0.5rem 0.75rem 0.5rem 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+    }
+    th {
+      background: #10ac84;
+      color: white;
+    }
+    .btn-inicio {
+      background: #576574;
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 0.6rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .btn-inicio:hover {
+      background: #3742fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <button onclick="location.href='index.html'" class="btn-inicio">← Volver al inicio</button>
+    <h2>📊 Vista Unificada de Visitas</h2>
+
+    <div class="filtros">
+      <label>Tipo:</label>
+      <select id="tipo">
+        <option value="">Todos</option>
+        <option value="Residentes">Residentes</option>
+        <option value="No Residentes">No Residentes</option>
+      </select>
+      <label>Desde:</label>
+      <input type="month" id="desde" />
+      <label>Hasta:</label>
+      <input type="month" id="hasta" />
+      <label>Texto:</label>
+      <input type="text" id="buscar" placeholder="Buscar en observaciones..." />
+      <button onclick="filtrar()">🔍 Filtrar</button>
+    </div>
+
+    <div class="tabla" id="resultados"></div>
+    <div class="resumen" id="resumen"></div>
+    <div class="graficos">
+      <canvas id="grafico"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let datosOriginales = [];
+
+    async function cargarDatos() {
+      const res = await fetch('/api/visitas'); // Hace una petición HTTP a la API
+      datosOriginales = await res.json(); // Convierte la respuesta en JSON y la guarda en la variable global
+      filtrar();  // Llama a una función
+    }
+
+    function filtrar() {
+      const tipo = document.getElementById('tipo').value.toLowerCase(); //Obtiene el valor del campo "tipo".
+      const desde = document.getElementById('desde').value; //Obtiene la fecha mínima desde la que se quiere filtrar.
+      const hasta = document.getElementById('hasta').value; //Obtiene la fecha máxima hasta la que se quiere filtrar.
+      const buscar = document.getElementById('buscar').value.toLowerCase(); //Obtiene el texto de búsqueda.
+
+      let datos = datosOriginales.filter(v => { //Filtra los datos originales según los criterios ingresados.
+        const fecha = v.fecha.slice(0, 7); //Extrae el año y mes de la fecha del dato (YYYY-MM).
+        const tipoMatch = !tipo || v.tipo.toLowerCase() === tipo;
+        const desdeOk = !desde || fecha >= desde; //Verifica si la fecha es igual o posterior a "desde"
+        const hastaOk = !hasta || fecha <= hasta; //Verifica si la fecha es igual o anterior a "hasta"
+        const textoOk = !buscar || (v.observaciones && v.observaciones.toLowerCase().includes(buscar)); //Verifica si el texto buscado está en las observaciones.
+        return tipoMatch && desdeOk && hastaOk && textoOk; //Devuelve solo los datos que cumplen todos los filtros.
+      });
+
+      renderTabla(datos);
+      renderResumen(datos);
+      renderGrafico(datos);
+    }
+//Tabla HTML con los resultados de las visitas filtradas.
+    function renderTabla(data) {
+      const div = document.getElementById('resultados');
+      if (!data.length) return div.innerHTML = '<p>No hay resultados para mostrar.</p>';
+      let html = `<table><thead><tr><th>Fecha (año y mes)</th><th>Tipo de origen</th><th>Cantidad de visitas</th><th>Observaciones</th></tr></thead><tbody>`;
+      data.forEach(v => {
+        html += `<tr><td>${v.fecha.slice(0, 7)}</td><td>${v.tipo}</td><td>${v.visitas}</td><td>${v.observaciones || '-'}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      div.innerHTML = html;
+    }
+//Resumen estadístico de los datos filtrados.
+    function renderResumen(data) {
+      const total = data.reduce((acc, v) => acc + v.visitas, 0);
+      const promedio = data.length ? (total / data.length).toFixed(2) : 0;
+      const max = data.reduce((acc, v) => v.visitas > acc.visitas ? v : acc, {visitas: -1});
+      document.getElementById('resumen').innerHTML = `
+        <p>🔢 Total de visitas: <strong>${total}</strong></p>
+        <p>📊 Promedio de visitas: <strong>${promedio}</strong></p>
+        <p>🏆 Mayor cantidad de visitas: <strong>${max.visitas}</strong> en ${max.fecha?.slice(0,7) || '-'}</p>
+      `;
+    }
+
+    //Dibuja un gráfico de barras que muestra la cantidad total de visitas por mes.
+    function renderGrafico(data) {
+      const ctx = document.getElementById('grafico').getContext('2d');
+      const agrupado = {};
+      data.forEach(v => {
+        const fecha = v.fecha.slice(0, 7);
+        agrupado[fecha] = (agrupado[fecha] || 0) + v.visitas;
+      });
+      const labels = Object.keys(agrupado).sort();
+      const valores = labels.map(k => agrupado[k]);
+      if (window.chart) window.chart.destroy();
+      window.chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Visitas por mes',
+            data: valores,
+            backgroundColor: '#1dd1a1'
+          }]
+        }
+      });
+    }
+
+    cargarDatos();
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visitas por Fecha</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #48dbfb, #1dd1a1);
+      color: #222;
+      min-height: 100vh;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2 {
+      margin-bottom: 1rem;
+    }
+    select {
+      padding: 0.6rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    .grupo-fecha {
+      background: #ffffffdd;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      padding: 1rem 2rem;
+      margin-bottom: 1rem;
+      max-width: 600px;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th {
+      background-color: #1dd1a1;
+      color: white;
+    }
+    .btn-inicio {
+      background: #576574;
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1.5rem;
+      transition: background 0.3s ease;
+    }
+    .btn-inicio:hover {
+      background: #3742fa;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Visitas por AÑO y MES</h2>
+
+  <button class="btn-inicio" onclick="irIndex()">← Volver al inicio</button>
+  <div style="height: 20px;"></div>
+
+  <label for="fechaFiltro">Seleccionar MES y AÑO:</label>
+  <input type="month" id="fechaFiltro" name="fechaFiltro" />
+
+  <div id="resultados"></div>
+
+  <script>
+    const fechaFiltro = document.getElementById('fechaFiltro');
+    const resultadosDiv = document.getElementById('resultados');
+//Llama a la API
+    async function cargarPorFecha(fecha) {
+      try {
+        const res = await fetch(`/api/visitas/por-fecha?fecha=${fecha}`); //petición HTTP
+        if (!res.ok) throw new Error("Error al cargar visitas por fecha");
+//Convierte la respuesta JSON a un array de objetos.
+        const visitas = await res.json();
+
+        if (visitas.length === 0) {
+          resultadosDiv.innerHTML = '<p>No hay visitas para esta fecha.</p>';
+          return;
+        }
+//Comienza a construir el HTML para la tabla
+        let html = '';
+        html += `<div class="grupo-fecha"><h3>Visitas en ${fecha.slice(0,7)} (año y mes)</h3>`; // toma solo el año y mes
+        html += '<table><thead><tr><th>Tipo de origen</th><th>Cantidad de visitas</th><th>Observaciones</th></tr></thead><tbody>';
+        //Recorre cada visita y crea una fila de tabla
+          visitas.forEach(v => {
+          html += `<tr>
+            <td>${v.tipo}</td>
+            <td>${v.visitas}</td>
+            <td>${v.observaciones || '-'}</td>
+          </tr>`;
+        });
+        html += '</tbody></table></div>';
+
+        resultadosDiv.innerHTML = html;
+
+      } catch (error) {
+        resultadosDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+      }
+    }
+//Detecta cuándo el usuario cambia la fecha en el campo
+    fechaFiltro.addEventListener('change', () => {
+      const val = fechaFiltro.value;
+      if (val) {
+        cargarPorFecha(val + '-01');
+      } else {
+        resultadosDiv.innerHTML = '';
+      }
+    });
+// va a la pagina principal
+    function irIndex() {
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

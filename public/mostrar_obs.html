@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visitas con Observaciones</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #48dbfb, #1dd1a1);
+      color: #222;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffffdd;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #1dd1a1;
+      color: white;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .btn-inicio, button {
+      background: #576574;
+      color: white;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      padding: 0.6rem 1rem;
+      margin: 0 5px 1rem 0;
+      transition: background 0.3s ease;
+    }
+    .btn-inicio:hover, button:hover {
+      background: #3742fa;
+    }
+    .btn-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    #paginaTexto {
+      font-weight: 700;
+      margin: 0 10px;
+    }
+    .centrado-superior {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    #busquedaObs {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+      font-size: 1rem;
+    }
+    #tablaObservaciones {
+      table-layout: fixed;
+      width: 100%;
+    }
+    #tablaObservaciones th:nth-child(1), /* Fecha */
+    #tablaObservaciones td:nth-child(1) {
+      width: 100px;
+    }
+    #tablaObservaciones th:nth-child(2), /* Tipo de origen */
+    #tablaObservaciones td:nth-child(2) {
+      width: 150px;
+    }
+    #tablaObservaciones th:nth-child(3), /* Cantidad de visitas */
+    #tablaObservaciones td:nth-child(3) {
+      width: 160px;
+    }
+    #tablaObservaciones th:nth-child(4), /* Observaciones */
+    #tablaObservaciones td:nth-child(4) {
+      width: auto;
+      overflow-wrap: break-word; /* corta el texto si es largo */
+    }
+  </style>
+</head>
+<body>
+  <h2>Visitas con Observaciones</h2>
+  <div class="centrado-superior">
+    <button class="btn-inicio" onclick="irIndex()">← Volver al inicio</button>
+    <input type="text" id="busquedaObs" placeholder="🔍 Buscar por palabra/s..." />
+  </div>
+<!-- Botones de paginas-->
+  <div class="btn-container" id="btnsArriba">
+    <button id="btnPrimera">⏮ Primera página</button>
+    <button id="prevObs" disabled>← Anterior</button>
+    <span id="paginaTexto">Página 1</span>
+    <button id="nextObs">Siguiente →</button>
+    <button id="btnUltima">Última página ⏭</button>
+  </div>
+
+  <table id="tablaObservaciones">
+    <thead>
+      <tr>
+        <th>Fecha (año y mes)</th>
+        <th>Tipo de origen</th>
+        <th>Cantidad de visitas</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let paginaObs = 1; //Guarda la página actual
+    const limite = 20; //cantidad máxima de registros que se muestran por página.
+    let totalRegistros = 0; // guardamos el total de visitas con observaciones
+    const busquedaObs = document.getElementById('busquedaObs'); //referencia al input de búsqueda, para leer lo que se escribe.
+    let datosCompletos = [];
+
+  // Función para obtener el total de visitas con observaciones
+    async function obtenerTotalObservaciones() {
+      try {
+        const res = await fetch('/api/visitas/observaciones/count'); //peticion HTTP
+        if (!res.ok) throw new Error('No se pudo obtener el total');
+        const data = await res.json();
+        totalRegistros = data.total || 0;
+      } catch (error) {
+        console.error('Error al obtener total:', error);
+        totalRegistros = 0;
+      }
+    }
+
+    //carga la lista de observaciones paginadas para la página dada:
+    async function cargarObservacionesPaginadas(pagina) {
+      try {
+        // Obtener total la primera vez o si totalRegistros es 0
+        if (!totalRegistros) await obtenerTotalObservaciones();
+        const offset = (pagina - 1) * limite; //paginacion
+        const res = await fetch(`/api/visitas/observaciones?limit=${limite}&offset=${offset}`); //peticion HTTP
+        if (!res.ok) throw new Error('No se pudo obtener datos');
+        const datos = await res.json();
+        mostrarTabla(datos, pagina, Math.ceil(totalRegistros / limite));
+      } catch (error) {
+        alert('❌ Error al cargar observaciones: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    //trae todos los datos asi luego se filtran
+    async function cargarTodosDatos() {
+      try {
+        const res = await fetch('/api/visitas/all'); //peticion HTTP
+        if (!res.ok) throw new Error('No se pudo obtener los datos completos');
+        datosCompletos = await res.json();
+      } catch (error) {
+        alert('❌ Error al cargar todos los datos: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    //se ejecuta cada vez que se escribe algo en búsqueda
+    async function manejarBusqueda() {
+      const filtro = busquedaObs.value.trim().toLowerCase();
+      if (!filtro) {
+        cargarObservacionesPaginadas(1);
+        return;
+      }
+
+      if (datosCompletos.length === 0) await cargarTodosDatos();
+
+      const filtrados = datosCompletos.filter(v =>
+        v.fecha.toLowerCase().includes(filtro) ||
+        v.tipo.toLowerCase().includes(filtro) ||
+        (v.observaciones && v.observaciones.toLowerCase().includes(filtro)) ||
+        v.visitas.toString().includes(filtro)
+      );
+
+      mostrarTabla(filtrados, 0, 0, true);
+    }
+
+    function mostrarTabla(datos, pagina, totalPaginas, sinPaginacion = false) { //renderizar la tabla HTML
+      const tbody = document.querySelector('#tablaObservaciones tbody');
+      tbody.innerHTML = '';
+
+      if (datos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay coincidencias.</td></tr>';
+        return;
+      }
+      
+//muestra los datos en la tabla.
+      datos.forEach(v => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${v.fecha.slice(0, 7)}</td>
+          <td>${v.tipo === 'residentes' ? 'Residentes' : 'No Residentes'}</td>
+          <td>${v.visitas}</td>
+          <td>${v.observaciones}</td>
+        `;
+        tbody.appendChild(fila);
+      });
+ // Funciones para navegar páginas (habilitación y deshabilitación de los botones de paginación depende en que página se navega).
+      if (sinPaginacion) {
+        document.getElementById('prevObs').disabled = true;
+        document.getElementById('nextObs').disabled = true;
+        document.getElementById('btnPrimera').disabled = true;
+        document.getElementById('btnUltima').disabled = true;
+        document.getElementById('paginaTexto').textContent = `Resultados encontrados: ${datos.length}`;
+      } else {
+        document.getElementById('prevObs').disabled = pagina <= 1;
+        document.getElementById('nextObs').disabled = pagina >= totalPaginas;
+        document.getElementById('btnPrimera').disabled = pagina <= 1;
+        document.getElementById('btnUltima').disabled = pagina >= totalPaginas;
+        document.getElementById('paginaTexto').textContent = `Página ${pagina}`;
+        paginaObs = pagina; //Se actualiza para guardar la página actual que se está mostrando.
+      }
+    }
+
+      // navegación de botones
+    document.getElementById('prevObs').addEventListener('click', () => {
+      if (paginaObs > 1) cargarObservacionesPaginadas(paginaObs - 1);
+    });
+
+    document.getElementById('nextObs').addEventListener('click', () => {
+      cargarObservacionesPaginadas(paginaObs + 1);
+    });
+
+    document.getElementById('btnPrimera').addEventListener('click', () => {
+      cargarObservacionesPaginadas(1);
+    });
+
+    document.getElementById('btnUltima').addEventListener('click', async () => {
+      const totalPaginas = Math.ceil(totalRegistros / limite);
+      cargarObservacionesPaginadas(totalPaginas);
+    });
+
+    busquedaObs.addEventListener('input', manejarBusqueda);
+
+    // va a la pagina principal
+    function irIndex() {
+      window.location.href = 'index.html';
+    }
+
+    cargarObservacionesPaginadas(paginaObs); //Carga los datos usando la API paginada
+  </script>
+</body>
+</html>

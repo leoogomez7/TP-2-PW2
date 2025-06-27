@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Visitas a Parques Nacionales</title>
+  <style>
+    :root {
+      --color1: #ff6b6b;
+      --color2: #feca57;
+      --color3: #48dbfb;
+      --color4: #1dd1a1;
+      --color5: #576574;
+      --color6: #341f97;
+      --bg-gradient: linear-gradient(135deg, #74b9ff, #a29bfe);
+      --card-bg: #ffffffdd;
+      --text-color: #222;
+      --radius-lg: 14px;
+      --shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-main);
+      background: var(--bg-gradient);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--text-color);
+      padding: 2rem 1rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      color: white;
+      text-shadow: 0 0 6px rgba(0,0,0,0.3);
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      margin: 0 0 0.25rem 0;
+      letter-spacing: 2px;
+    }
+
+    header p {
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    nav {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      padding: 2.5rem 2rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    a.button-link {
+      display: inline-block;
+      padding: 1rem 1.2rem;
+      border-radius: var(--radius-lg);
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.25s ease;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    a.button-link:nth-child(1) {
+      background: linear-gradient(45deg, var(--color1), #ff4757);
+      box-shadow: 0 6px 14px rgba(255, 107, 107, 0.5);
+    }
+
+    a.button-link:nth-child(2) {
+  background: linear-gradient(45deg, var(--color1), #ff4757);
+  box-shadow: 0 6px 14px rgba(255, 107, 107, 0.5);
+  color: white;
+}
+
+    .submenu {
+      position: relative;
+      user-select: none;
+    }
+
+    .submenu > .button-link {
+      cursor: pointer;
+      background: linear-gradient(45deg, var(--color4), #48e6b7);
+      box-shadow: 0 6px 14px rgba(29, 209, 161, 0.5);
+      color: white;
+      font-weight: 700;
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.2rem;
+      display: inline-block;
+      transition: transform 0.15s ease, box-shadow 0.25s ease;
+      text-align: center;
+    }
+
+    .submenu > .button-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+    }
+
+    .submenu ul {
+      list-style: none;
+      margin: 0;
+      padding: 0.3rem 0;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 220px;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      display: none;
+      z-index: 100;
+    }
+
+    .submenu.active ul {
+      display: block;
+    }
+
+    .submenu ul li a {
+      display: block;
+      padding: 0.6rem 1rem;
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: var(--radius-lg);
+      transition: background-color 0.2s ease;
+    }
+
+    .submenu ul li a:hover {
+      background: var(--color3);
+      color: white;
+    }
+
+    @media (max-width: 520px) {
+      nav {
+        padding: 1.8rem 1.5rem;
+      }
+
+      a.button-link, .submenu > .button-link {
+        padding: 0.85rem 1rem;
+        font-size: 0.95rem;
+      }
+
+      header h1 {
+        font-size: 2rem;
+      }
+
+      header p {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sistema de gestión</h1>
+    <p>Bienvenido al sistema de gestión sobre las visitas en Parques Nacionales. Seleccionar la opción a interactuar con los registros.</p>
+  </header>
+  <nav>
+    <a href="gestion.html" class="button-link">🛠 Mostrar visitas</a>
+     <a href="vista_unificada.html" class="button-link">📈 Reporte </a>
+    <div class="submenu">
+      <a class="button-link">📊 Opciones de visualización</a>
+      <ul>
+        <li><a href="mostrar_tipo.html">🔍 Por Tipo de Origen</a></li>
+        <li><a href="mostrar_fecha.html">📅 Por Año y Mes</a></li>
+        <li><a href="mostrar_obs.html">📝 Con Observaciones</a></li>
+      </ul>
+    </div>
+  </nav>
+
+<!-- Manejo de botones para abrir y cerrar submenús -->
+  <script>
+    document.querySelectorAll('.submenu > .button-link').forEach(button => {
+      button.addEventListener('click', () => {
+        const submenu = button.parentElement;
+        submenu.classList.toggle('active');
+        document.querySelectorAll('.submenu').forEach(s => {
+          if (s !== submenu) s.classList.remove('active');
+        });
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.submenu')) {
+        document.querySelectorAll('.submenu').forEach(s => s.classList.remove('active'));
+      }
+    });
+  </script>
+</body>
+</html>

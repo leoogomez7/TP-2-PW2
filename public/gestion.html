@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestión de Visitas</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
+      background: linear-gradient(135deg, #74b9ff, #9bc4ec);
+      color: #222;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      color: white;
+      text-shadow: 0 0 6px rgba(0,0,0,0.3);
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      max-width: 1500px;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      margin: 0 auto 2rem auto;
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background: #3397fa;
+      color: white;
+      font-weight: 700;
+    }
+    tr:hover {
+      background: #ffe6e6;
+    }
+    button {
+      padding: 6px 12px;
+      background: #3397fa;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s ease;
+      margin: 0 2px;
+    }
+    button:hover {
+      background: #1e70d1;
+    }
+    .btn-agregar {
+      display: block;
+      max-width: 280px;
+      margin: 0 auto 2rem auto;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .volver-container {
+      text-align: center;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #busqueda {
+      padding: 0.5rem 1rem;
+      width: 100%;
+      max-width: 300px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .volver-inicio {
+      display: inline-block;
+      background: #3397fa; 
+      color: white; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      text-decoration: none; 
+      font-weight: 600;
+      transition: background 0.3s ease;
+    }
+    .volver-inicio:hover {
+      background: #1e70d1;
+    }
+    /* Modal */
+    .modal-bg {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .modal {
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      max-width: 400px;
+      width: 90%;
+    }
+    .modal h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      color: #3397fa;
+      text-align: center;
+    }
+    .modal label {
+      display: block;
+      margin: 0.5rem 0 0.25rem;
+      font-weight: 600;
+    }
+    .modal input, .modal textarea, .modal select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    .modal textarea {
+      resize: vertical;
+    }
+    .modal-buttons {
+      text-align: center;
+    }
+    .modal-buttons button {
+      margin: 0 0.5rem;
+      min-width: 100px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Gestión de Visitas</h1>
+    <div class="volver-container">
+      <a href="index.html" class="volver-inicio">← Volver al inicio</a>
+      <input type="text" id="busqueda" placeholder="🔍 Buscar por palabra/s..." />
+    </div>
+    
+  <button class="btn-agregar" id="btnAgregar">+ Agregar nueva visita</button>
+
+<div style="text-align:center; margin-bottom: 1rem;">
+  <button id="btnPrimera">⏮ Primer página</button>
+  <button id="btnAnterior">← Anterior</button>
+  <span id="paginaActual" style="font-weight:bold; margin: 0 10px;">Página 1</span>
+  <button id="btnSiguiente">Siguiente →</button>
+  <button id="btnUltima">Última página ⏭</button>
+</div>
+
+  <table id="tablaGestion">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha (año y mes)</th>
+        <th>Tipo de Origen</th>
+        <th>Cantidad de Visitas</th>
+        <th>Observaciones</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Filas generadas dinámicamente -->
+    </tbody>
+  </table>
+
+  <!-- Boton Agregar/Editar -->
+  <div class="modal-bg" id="modalForm">
+    <div class="modal">
+      <h2 id="modalTitulo">Agregar Visita</h2>
+      <form id="formVisita">
+        <input type="hidden" id="idVisita" />
+        <label for="fecha">Fecha (AAAA-MM-DD)</label>
+        <input type="date" id="fecha" required />
+
+        <label for="tipo">Tipo de Origen</label>
+        <select id="tipo" required>
+          <option value="">Seleccione</option>
+          <option value="residentes">Residentes</option>
+          <option value="no residentes">No Residentes</option>
+        </select>
+
+        <label for="visitas">Cantidad de Visitas</label>
+        <input type="number" id="visitas" min="0" required />
+
+        <label for="observaciones">Observaciones</label>
+        <textarea id="observaciones" rows="3"></textarea>
+
+        <div class="modal-buttons">
+          <button type="submit" id="btnGuardar">Guardar</button>
+          <button type="button" id="btnCancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+  const tablaBody = document.querySelector('#tablaGestion tbody'); //Busca el <tbody> en la tabla "tablaGestion" para insertar las filas dinámicamente.
+  const modal = document.getElementById('modalForm'); //se abre una ventana emergente para agregar o modificar visitas.
+  const modalTitulo = document.getElementById('modalTitulo'); // texto dinámicamente.
+  const formVisita = document.getElementById('formVisita'); //Captura el formulario (ingreso de datos y enviarlo)
+
+  const idVisita = document.getElementById('idVisita'); //Captura este campo
+  const fechaInput = document.getElementById('fecha'); //Captura este campo
+  const tipoInput = document.getElementById('tipo'); //Captura este campo
+  const visitasInput = document.getElementById('visitas'); //Captura este campo
+  const observacionesInput = document.getElementById('observaciones'); //Captura este campo
+
+  const btnAgregar = document.getElementById('btnAgregar'); //Botones del formulario (agregar nueva visita)
+  const btnCancelar = document.getElementById('btnCancelar'); //Botones del formulario (agregar nueva visita)
+
+  let paginaActual = 0;
+  let totalPaginas = 1;
+
+async function obtenerTotalPaginas() { //calcula cuántas páginas hay en total
+  const res = await fetch('/api/visitas/count'); // peticion HTTP (total de visitas)
+  const data = await res.json(); //Convierte la respuesta del servidor en un objeto JavaScript.
+  totalPaginas = Math.ceil(data.total / filasPorPagina);
+}
+  const filasPorPagina = 20; //muestra 20 filas 
+
+async function cargarVisitas(pagina = 0) { //carga los datos de las visitas en la tabla
+  try {
+    await obtenerTotalPaginas();
+    const filtro = busquedaInput.value.trim().toLowerCase();
+    let visitas;
+
+    if (filtro) {
+      // Si realizó una busqueda, obtengo los registros filtrados en frontend
+      const res = await fetch('/api/visitas/all');
+      if (!res.ok) throw new Error('Error al cargar visitas');
+      visitas = await res.json();
+      visitas = visitas.filter(v =>
+        v.fecha.toLowerCase().includes(filtro) ||
+        v.tipo.toLowerCase().includes(filtro) ||
+        (v.observaciones && v.observaciones.toLowerCase().includes(filtro)) ||
+        String(v.visitas).includes(filtro) ||
+        String(v.id).includes(filtro)
+      );
+      // No hago paginación cuando hago la busqueda, porque se muestra todos los registros filtrados
+    } else {
+      // Si no hay busqueda, cargo paginado normal
+      const offset = pagina * filasPorPagina;
+      const res = await fetch(`/api/visitas?limit=${filasPorPagina}&offset=${offset}`);
+      if (!res.ok) throw new Error('Error al cargar visitas');
+      visitas = await res.json();
+    }
+
+    // Limpio tabla
+    tablaBody.innerHTML = '';
+
+    if (visitas.length === 0) {
+      tablaBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No hay visitas para mostrar.</td></tr>`;
+      return;
+    }
+
+    // Muestro datos en tabla
+    visitas.forEach(visita => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${visita.id}</td>
+        <td>${visita.fecha.slice(0,7)}</td>
+        <td>${visita.tipo}</td>
+        <td>${visita.visitas}</td>
+        <td>${visita.observaciones || ''}</td>
+        <td>
+          <button class="btn-editar"
+            data-id="${visita.id}"
+            data-fecha="${visita.fecha}"
+            data-tipo="${visita.tipo}"
+            data-visitas="${visita.visitas}"
+            data-observaciones="${visita.observaciones || ''}"
+          >Modificar</button>
+          <button onclick="eliminarVisita(${visita.id})">Eliminar</button>
+        </td>
+      `;
+      tablaBody.appendChild(tr);
+      tr.querySelector('.btn-editar').addEventListener('click', e => {
+        const btn = e.currentTarget;
+        abrirModalEditar(
+          btn.dataset.id,
+          btn.dataset.fecha,
+          btn.dataset.tipo,
+          btn.dataset.visitas,
+          btn.dataset.observaciones
+        );
+      });
+    });
+
+    // Actualizo paginación solo si no hay filtro
+    if (!filtro) {
+      paginaActual = pagina;
+      paginaTexto.textContent = `Página ${paginaActual + 1}`;
+      btnAnterior.style.display = paginaActual === 0 ? 'none' : 'inline-block';
+      btnSiguiente.style.display = (paginaActual + 1) >= totalPaginas ? 'none' : 'inline-block';
+      btnPrimera.style.display = paginaActual === 0 ? 'none' : 'inline-block';
+      btnUltima.style.display = (paginaActual + 1) >= totalPaginas ? 'none' : 'inline-block';
+    } else {
+      // Con filtro, deshabilito botones de paginación porque se muestra todo
+      paginaTexto.textContent = `Resultados de búsqueda (${visitas.length})`;
+      btnAnterior.style.display = 'none';
+      btnSiguiente.style.display = 'none';
+      btnPrimera.style.display = 'none';
+      btnUltima.style.display = 'none';
+    }
+  } catch (error) {
+    alert('❌ ' + error.message);
+  }
+}
+
+
+//navegación por páginas:
+const btnAnterior = document.getElementById('btnAnterior');
+const btnSiguiente = document.getElementById('btnSiguiente');
+const paginaTexto = document.getElementById('paginaActual');
+
+btnAnterior.addEventListener('click', async () => {
+  if (paginaActual > 0) {
+    await cargarVisitas(paginaActual - 1);
+    paginaTexto.textContent = `Página ${paginaActual + 1}`;
+  }
+});
+
+btnSiguiente.addEventListener('click', async () => {
+  await cargarVisitas(paginaActual + 1);
+  paginaTexto.textContent = `Página ${paginaActual + 1}`;
+});
+
+const btnPrimera = document.getElementById('btnPrimera');
+const btnUltima = document.getElementById('btnUltima');
+
+btnPrimera.addEventListener('click', async () => {
+  await cargarVisitas(0);
+});
+
+btnUltima.addEventListener('click', async () => {
+  await cargarVisitas(totalPaginas - 1);
+});
+
+//es para agregar o editar una visita:
+  function abrirModalAgregar() {
+    modalTitulo.textContent = 'Agregar Visita';
+    idVisita.value = '';
+    fechaInput.value = '';
+    tipoInput.value = '';
+    visitasInput.value = '';
+    observacionesInput.value = '';
+    modal.style.display = 'flex';
+  }
+
+  function abrirModalEditar(id, fecha, tipo, visitas, observaciones) {
+    modalTitulo.textContent = 'Modificar Visita';
+    idVisita.value = id;
+    fechaInput.value = fecha;
+
+      console.log('Tipo recibido:', tipo);
+      console.log('Asignando tipoInput.value:', tipo.trim().toLowerCase());
+
+    tipoInput.value = tipo.trim().toLowerCase();
+    visitasInput.value = visitas;
+    observacionesInput.value = observaciones;
+    modal.style.display = 'flex';
+  }
+
+  btnAgregar.addEventListener('click', abrirModalAgregar);
+  btnCancelar.addEventListener('click', () => { modal.style.display = 'none'; });
+  
+  //se envia el formulario (Agregar o Modificar visita)
+  formVisita.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+      fecha: fechaInput.value,
+      tipo: tipoInput.value,
+      visitas: Number(visitasInput.value),
+      observaciones: observacionesInput.value.trim()
+    };
+
+    try {
+      if (idVisita.value) {
+        // PUT para modificar
+        const res = await fetch(`/api/put/${idVisita.value}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)  // ya incluye fecha, tipo, etc.
+        });
+        if (!res.ok) throw new Error('Error al modificar visita');
+        alert('Visita modificada correctamente');
+      } else {
+        // POST para agregar
+        const res = await fetch('/api/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Error al agregar visita');
+        alert('Visita agregada correctamente');
+      }
+      modal.style.display = 'none';
+      cargarVisitas();
+    } catch (err) {
+      alert('❌ ' + err.message);
+    }
+  });
+
+  async function eliminarVisita(id) {
+    if (!confirm(`¿Eliminar visita con ID ${id}?`)) return;
+    try {
+      const res = await fetch(`/api/delete/${id}`, { method: 'DELETE' }); //peticion HTTP
+      if (!res.ok) throw new Error('Error al eliminar visita');
+      const data = await res.json();
+      alert(data.mensaje);
+      cargarVisitas();
+    } catch (err) {
+      alert('❌ ' + err.message);
+    }
+  }
+
+  // Se cierra el modal clickeando afuera del cuadro:
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+// Carga la primera página al iniciar:
+document.addEventListener('DOMContentLoaded', () => {
+  cargarVisitas(0);  
+});
+
+// Tabla actualizada para mostrar los datos buscados:
+const busquedaInput = document.getElementById('busqueda'); //
+busquedaInput.addEventListener('input', () => {
+  cargarVisitas(0);
+});
+</script>
+</body>
+</html>
